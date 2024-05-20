@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API de Estudiantes</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Lista de Estudiantes</h1>
+    
+    <form id="add-student-form">
+        <input type="text" id="nombre" placeholder="Nombre" required>
+        <input type="number" id="edad" placeholder="Edad" required>
+        <label>
+            <input type="checkbox" id="suscrito"> Suscrito
+        </label>
+        <button type="submit">Agregar Estudiante</button>
+    </form>
+    
+    <table id="estudiantes-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Edad</th>
+                <th>Suscrito</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiURL = 'http://localhost:8080/api/estudiantes';
+
+            function fetchEstudiantes() {
+                fetch(apiURL)
+                    .then(response => response.json())
+                    .then(data => {
+                        const tbody = document.querySelector('#estudiantes-table tbody');
+                        tbody.innerHTML = '';
+                        data.forEach(estudiante => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${estudiante.id}</td>
+                                <td>${estudiante.nombre}</td>
+                                <td>${estudiante.edad}</td>
+                                <td>${estudiante.suscrito ? 'Sí' : 'No'}</td>
+                                <td><button onclick="deleteEstudiante(${estudiante.id})">Eliminar</button></td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
+            document.getElementById('add-student-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const nombre = document.getElementById('nombre').value;
+                const edad = document.getElementById('edad').value;
+                const suscrito = document.getElementById('suscrito').checked;
+
+                fetch(apiURL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ nombre, edad, suscrito })
+                })
+                .then(response => response.json())
+                .then(estudiante => {
+                    fetchEstudiantes(); // Actualiza la tabla después de agregar el estudiante
+                    document.getElementById('add-student-form').reset(); // Resetea el formulario
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            window.deleteEstudiante = function(id) {
+                fetch(`${apiURL}/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        fetchEstudiantes(); // Actualiza la tabla después de eliminar el estudiante
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            };
+
+            fetchEstudiantes(); // Cargar los estudiantes al cargar la página
+        });
+    </script>
+</body>
+</html>
